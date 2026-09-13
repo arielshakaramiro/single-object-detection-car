@@ -1,0 +1,32 @@
+# Model weights (large binary files, not meant for git)
+*.pt
+*.pth
+*.onnx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Dataset (fetched separately from Google Drive, see README)
+data/
+*.jpg
+*.jpeg
+*.png
+!results/*.jpg
+!results/*.jpeg
+!results/*.png
+
+# Secrets (ngrok tokens, API keys) — never commit real tokens
+.env
+*.token
