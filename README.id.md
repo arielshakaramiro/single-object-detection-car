@@ -28,6 +28,22 @@ v1 langsung diiterasi menjadi v2 (augmentasi + partial freeze ditambahkan ke scr
 
 ---
 
+## Hasil visual
+
+![Perbandingan lintas kondisi pencahayaan dan adegan](results/gallery.jpg)
+*Delapan foto uji lintas ketiga versi — dari kegagalan total di adegan jalan ramai multi-mobil sampai deteksi presisi 1 mobil, dan perbandingan v1→v2→v3 di gambar yang sama yang jadi alasan perubahan arsitektur di atas.*
+
+**Kasus terbaik (v1)** — background cerah bersih, hasil paling presisi dari semua versi:
+
+![Deteksi presisi, background bersih](results/v1_presisi.jpg)
+
+**Foto uji yang sama, dua versi** — v1 menutup penuh mobil dengan margin kecil di atas atap; v3, diuji belakangan di foto yang sama persis, juga menutup penuh tapi dengan kotak yang jauh lebih longgar (lihat "Temuan Utama" di bawah untuk alasannya):
+
+![Hasil v1 di foto BMW/senja](results/v1_senja_cerah.jpg)
+![Hasil v3 di foto yang sama](results/v3_bmw_senja.jpg)
+
+
+
 ## Temuan utama: kemungkinan localization berbasis "mode", bukan localization per-gambar yang sesungguhnya
 
 Di luar angka IoU agregat, menguji model yang sudah di-serve dengan foto dunia nyata **di luar** distribusi data training (mobil berbeda, negara berbeda, pencahayaan berbeda — diambil dari web, bukan dataset asli) memunculkan pola yang lebih menarik daripada sekadar "kadang akurat, kadang tidak":
@@ -37,12 +53,23 @@ Di luar angka IoU agregat, menguji model yang sudah di-serve dengan foto dunia n
 
 Pola ini konsisten dengan sebuah dugaan yang layak dicatat, bukan kesimpulan final (cuma segelintir foto luar-distribusi yang diuji, bukan studi sistematis): model mungkin menangkap **statistik global gambar yang kasar** (kecerahan/kontras keseluruhan) dan mengeluarkan salah satu dari beberapa bentuk kotak "tipikal" yang sudah dipelajari untuk kondisi pencahayaan itu, bukan benar-benar mengunci ke tepi objek masing-masing secara presisi. Ini bisa menjelaskan hampir semua yang kita amati di ketiga versi — kotak longgar di pencahayaan dramatis, kotak yang gagal total di adegan jalan-ramai multi-mobil, dan kenapa "memperbaiki" satu kegagalan kualitatif (kotak v2 yang memotong mobil) lewat v3 justru langsung memunculkan kegagalan lain (v3 jadi kotak paling longgar dari ketiganya di gambar yang sama) alih-alih konvergen ke perbaikan yang bersih.
 
-Lihat `results/gallery.jpg` untuk kumpulan lengkap foto uji kualitatif yang dirujuk di atas, dan `results/*.jpg` untuk contoh teranotasi satu-satu.
+**Dua foto langit cerah, mobil berbeda, kotak output nyaris identik (v3):**
+
+![v3 di jalan tol gurun cerah, mobil pertama](results/v3_bmw_senja.jpg)
+![v3 di jalan tol gurun cerah, mobil berbeda](results/v3_bmw_m3_gurun.jpg)
+
+**Foto gelap/mendung, versi yang sama — kotak yang jelas beda, jadi outputnya bukan konstanta literal:**
+
+![v3 di jalan tol hutan gelap/mendung](results/v3_hutan.jpg)
+
 
 ### Keterbatasan yang diketahui
 
 - **241 gambar adalah dataset kecil.** Ketiga versi menunjukkan gap IoU train/test yang nyata (walau mengecil).
-- **Asumsi objek tunggal gagal di adegan ramai.** Diuji dengan foto jalan tol berisi 8+ mobil — model menghasilkan satu kotak raksasa yang meliputi beberapa kendaraan sekaligus, bukan memilih satu (lihat `results/v1_multi_objek_gagal.jpg`). Ini memang wajar terjadi: arsitekturnya tidak punya mekanisme untuk memilih di antara beberapa kandidat objek.
+- **Asumsi objek tunggal gagal di adegan ramai.** Diuji dengan foto jalan tol berisi 8+ mobil — model menghasilkan satu kotak raksasa yang meliputi beberapa kendaraan sekaligus, bukan memilih satu. Ini memang wajar terjadi: arsitekturnya tidak punya mekanisme untuk memilih di antara beberapa kandidat objek.
+
+![Kasus gagal: banyak mobil, satu kotak raksasa](results/v1_multi_objek_gagal.jpg)
+
 - **Sensitif terhadap kondisi pencahayaan/adegan**, kemungkinan terkait pola "localization berbasis mode" di atas, bukan localization presisi-tepi yang sesungguhnya.
 - Tidak ada benchmark held-out sistematis untuk foto-foto uji luar-distribusi (dipakai untuk debugging kualitatif, bukan klaim akurasi yang ketat) — perlakukan "Temuan Utama" di atas sebagai dugaan yang perlu diselidiki lebih lanjut, bukan hasil yang sudah pasti.
 

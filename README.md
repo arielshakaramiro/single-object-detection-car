@@ -28,6 +28,22 @@ v1 was iterated on directly into v2 (adding augmentation + partial freeze on top
 
 ---
 
+## Visual results
+
+![Comparison gallery across lighting and scene conditions](results/gallery.jpg)
+*Eight test images across the three versions — from a full failure on a busy multi-car scene to a precise single-car detection, and the v1→v2→v3 comparison on the same image that motivated the architecture changes above.*
+
+**Best case (v1)** — bright, uncluttered background, tightest result across all versions:
+
+![Precise detection, clear background](results/v1_presisi.jpg)
+
+**Same test photo, two versions** — v1 fully contains the car with a small margin above the roofline; v3, tested later on this exact photo, contains it too but with a noticeably looser box (see "Key finding" below for why):
+
+![v1 result on the BMW/sunset photo](results/v1_senja_cerah.jpg)
+![v3 result on the same photo](results/v3_bmw_senja.jpg)
+
+
+
 ## Key finding: possible "mode-based" localization rather than true per-image localization
 
 Beyond the aggregate IoU numbers, testing the served model on real-world photos **outside** the training distribution (different cars, countries, lighting — sourced from the web, not the original dataset) surfaced a more interesting pattern than "sometimes accurate, sometimes not":
@@ -37,12 +53,23 @@ Beyond the aggregate IoU numbers, testing the served model on real-world photos 
 
 This pattern is consistent with a hypothesis worth flagging rather than a proven conclusion (only a handful of out-of-distribution images were tested, not a systematic study): the model may be picking up on **coarse global image statistics** (overall brightness/contrast) and outputting one of a few learned "typical" box shapes for that lighting regime, rather than tightly localizing each object's actual edges. This would explain most of what we observed across all three versions — loose boxes in dramatic lighting, a box that fully failed on a busy multi-car scene, and why "fixing" one qualitative failure (v2's box clipping the car) via v3 immediately introduced a different one (v3 being the loosest box of all three on that same image) rather than converging to a clean fix.
 
-See `results/gallery.jpg` for the full set of qualitative test images referenced above, and `results/*.jpg` for individual annotated examples.
+**Two bright-sky photos, different cars, near-identical output box (v3):**
+
+![v3 on a bright desert highway, first car](results/v3_bmw_senja.jpg)
+![v3 on a bright desert highway, different car](results/v3_bmw_m3_gurun.jpg)
+
+**A dark/overcast photo, same version — a clearly different box, so the output is not a literal constant:**
+
+![v3 on a dark, overcast forest highway](results/v3_hutan.jpg)
+
 
 ### Known limitations
 
 - **241 images is a small dataset.** All three versions show a real (if shrinking) train/test IoU gap.
-- **Single-object assumption breaks on busy scenes.** Tested on a highway photo with 8+ visible cars — the model produced one oversized box spanning several vehicles rather than picking one (see `results/v1_multi_objek_gagal.jpg`). This is expected: the architecture has no mechanism to choose among multiple candidate objects.
+- **Single-object assumption breaks on busy scenes.** Tested on a highway photo with 8+ visible cars — the model produced one oversized box spanning several vehicles rather than picking one. This is expected: the architecture has no mechanism to choose among multiple candidate objects.
+
+![Failure case: multiple cars, one oversized box](results/v1_multi_objek_gagal.jpg)
+
 - **Sensitivity to lighting/scene conditions**, plausibly tied to the "mode-based localization" pattern above rather than genuine edge-precise localization.
 - No systematic held-out benchmark exists for the out-of-distribution test images (they were used for qualitative debugging, not for a rigorous accuracy claim) — treat the "Key finding" above as a hypothesis for further investigation, not a settled result.
 
